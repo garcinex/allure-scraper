@@ -36,7 +36,7 @@ public class Main {
         ConfigLoader configLoader = new ConfigLoader();
         ScraperConfig config = configLoader.load(
                 command.getConfigFile(),
-                command.toScraperConfig()
+                command
         );
 
         // Uruchom scraper

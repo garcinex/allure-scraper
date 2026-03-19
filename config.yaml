@@ -1,4 +1,4 @@
-sourceDirectory: ./src/test/java
+sourceDirectory: C:\Users\Marcin\Documents\Bosch\RIOT\riot-automation-testing
 outputFile: ./target/jira/allure-report.csv
 filePattern: "*.java"
 recursive: true

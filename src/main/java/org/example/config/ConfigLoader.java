@@ -1,6 +1,7 @@
 package org.example.config;
 
 import lombok.extern.slf4j.Slf4j;
+import org.example.cli.ScraperCommand;
 import org.example.model.ScraperConfig;
 import org.yaml.snakeyaml.Yaml;
 
@@ -12,7 +13,7 @@ import java.util.Map;
 
 /**
  * Loader konfiguracji z plików YAML i argumentów CLI.
- * Priorytet: CLI args > plik config > wartości domyślne
+ * Priorytet: CLI args (tylko jawnie podane) > plik config > wartości domyślne
  */
 @Slf4j
 public class ConfigLoader {
@@ -21,28 +22,46 @@ public class ConfigLoader {
      * Ładuje konfigurację z pliku i opcjonalnie łączy z CLI args.
      *
      * @param configFilePath ścieżka do pliku konfiguracyjnego (może być null)
-     * @param cliConfig konfiguracja z CLI (może być null)
+     * @param command obiekt ScraperCommand z argumentami CLI
      * @return finalna konfiguracja
      */
-    public ScraperConfig load(String configFilePath, ScraperConfig cliConfig) {
+    public ScraperConfig load(String configFilePath, ScraperCommand command) {
         log.info("Ładowanie konfiguracji...");
 
         // Startuj od wartości domyślnych
         ScraperConfig config = ScraperConfig.defaults();
 
-        // Nadpisz z pliku konfiguracyjnego (jeśli istnieje)
-        if (configFilePath != null && !configFilePath.isEmpty()) {
-            Path path = Path.of(configFilePath);
-            if (Files.exists(path)) {
-                config = loadFromYaml(path, config);
-            } else {
-                log.warn("Plik konfiguracyjny nie istnieje: {}", configFilePath);
+        // Użyj jawnie podanego pliku konfiguracyjnego lub szukaj domyślnego
+        String configPathToLoad = configFilePath;
+        
+        // Jeśli nie podano pliku konfiguracyjnego, szukaj domyślnych
+        if (configPathToLoad == null || configPathToLoad.isEmpty()) {
+            // Sprawdź domyślne nazwy plików konfiguracyjnych
+            String[] defaultConfigs = {"config.yaml", "config.yml", "config.properties"};
+            for (String defaultConfig : defaultConfigs) {
+                Path defaultPath = Path.of(defaultConfig);
+                if (Files.exists(defaultPath)) {
+                    configPathToLoad = defaultConfig;
+                    log.debug("Znaleziono domyślny plik konfiguracyjny: {}", defaultConfig);
+                    break;
+                }
             }
         }
 
-        // Nadpisz z CLI args (najwyższy priorytet)
-        if (cliConfig != null) {
-            config = mergeCliConfig(cliConfig);
+        // Nadpisz z pliku konfiguracyjnego
+        if (configPathToLoad != null && !configPathToLoad.isEmpty()) {
+            Path path = Path.of(configPathToLoad);
+            if (Files.exists(path)) {
+                config = loadFromYaml(path, config);
+                log.debug("Załadowano konfigurację z pliku: {}", configPathToLoad);
+            } else {
+                log.warn("Plik konfiguracyjny nie istnieje: {}", configPathToLoad);
+            }
+        }
+
+        // Nadpisz z CLI args (tylko jawnie podane wartości, nie domyślne)
+        if (command != null) {
+            config = mergeCliConfig(config, command);
         }
 
         log.info("Konfiguracja załadowana: {}", config);
@@ -101,15 +120,42 @@ public class ConfigLoader {
     }
 
     /**
-     * Łączy konfigurację z CLI - wartości z CLI zawsze mają pierwszeństwo.
+     * Łączy konfigurację z CLI - tylko jawnie podane wartości nadpisują plik konfiguracyjny.
      */
-    private ScraperConfig mergeCliConfig(ScraperConfig cli) {
-        // CLI values always take precedence over config file values
+    private ScraperConfig mergeCliConfig(ScraperConfig current, ScraperCommand command) {
+        // Tylko jawnie podane wartości CLI nadpisują konfigurację z pliku
+        // (nie domyślne wartości)
+        
+        String sourceDir = current.getSourceDirectory();
+        String outputFile = current.getOutputFile();
+        String filePattern = current.getFilePattern();
+        boolean recursive = current.isRecursive();
+
+        if (command.isSourceDirectorySet()) {
+            sourceDir = command.getSourceDirectory();
+            log.debug("CLI nadpisuje sourceDirectory: {}", sourceDir);
+        }
+        
+        if (command.isOutputFileSet()) {
+            outputFile = command.getOutputFile();
+            log.debug("CLI nadpisuje outputFile: {}", outputFile);
+        }
+        
+        if (command.isFilePatternSet()) {
+            filePattern = command.getFilePattern();
+            log.debug("CLI nadpisuje filePattern: {}", filePattern);
+        }
+        
+        if (command.isRecursiveSet()) {
+            recursive = command.getRecursive();
+            log.debug("CLI nadpisuje recursive: {}", recursive);
+        }
+
         return ScraperConfig.builder()
-                .sourceDirectory(cli.getSourceDirectory())
-                .outputFile(cli.getOutputFile())
-                .filePattern(cli.getFilePattern())
-                .recursive(cli.isRecursive())
+                .sourceDirectory(sourceDir)
+                .outputFile(outputFile)
+                .filePattern(filePattern)
+                .recursive(recursive)
                 .build();
     }
 }
