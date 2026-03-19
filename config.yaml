@@ -1,14 +1,4 @@
-# Allure Scraper - Configuration file (YAML format)
-# Copy this file and adjust paths for your project
-
-# Path to test source directory (required)
 sourceDirectory: ./src/test/java
-
-# Output path for CSV file (optional)
 outputFile: ./target/jira/allure-report.csv
-
-# File pattern to search for (optional)
 filePattern: "*.java"
-
-# Whether to recursively search subdirectories (optional)
 recursive: true

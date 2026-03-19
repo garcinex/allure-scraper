@@ -27,9 +27,6 @@ public class AnnotationParser {
 
     private static final String ISSUE_ANNOTATION = "Issue";
     private static final String DESCRIPTION_ANNOTATION = "Description";
-    
-    // Pełna nazwa pakietu adnotacji Allure
-    private static final String ALLURE_PACKAGE = "io.qameta.allure";
 
     /**
      * Parsuje plik źródłowy Java i zwraca listę danych testowych.
@@ -41,9 +38,9 @@ public class AnnotationParser {
         List<TestData> testDataList = new ArrayList<>();
         
         try {
-            // Konfiguracja dla obsługi Java 15+ text blocks
+            // Konfiguracja dla obsługi Java 21
             ParserConfiguration config = new ParserConfiguration()
-                    .setLanguageLevel(ParserConfiguration.LanguageLevel.JAVA_15);
+                    .setLanguageLevel(ParserConfiguration.LanguageLevel.JAVA_21);
             
             String sourceCode = Files.readString(filePath);
             CompilationUnit cu = new com.github.javaparser.JavaParser(config).parse(sourceCode).getResult().orElseThrow();
