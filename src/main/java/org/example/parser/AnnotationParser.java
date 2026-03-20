@@ -25,7 +25,7 @@ import java.util.Optional;
 @Slf4j
 public class AnnotationParser {
 
-    private static final String ISSUE_ANNOTATION = "Issue";
+    private static final String ISSUE_ANNOTATION = "TmsLink";
     private static final String DESCRIPTION_ANNOTATION = "Description";
 
     /**
